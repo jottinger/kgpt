@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinFeature
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import okhttp3.Headers.Companion.toHeaders
-import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -18,11 +17,14 @@ import java.util.concurrent.TimeUnit
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
+/**
+ * This is a generalized interface appropriate for calling an OpenAI-compatible endpoint for an LLM.
+ */
 class GPT(
-    val apiToken: String? = null,
-    val endpoint: URI = URI("https://api.openai.com/v1/chat/completions"),
-    private val connectTimeoutTime: Duration = 3.seconds,
-    private val readTimeoutTime: Duration = 12.seconds
+    private val apiToken: String? = null,
+    endpoint: URI = URI("https://api.openai.com/v1/chat/completions"),
+    connectTimeoutTime: Duration = 3.seconds,
+    readTimeoutTime: Duration = 12.seconds
 ) {
     private val endpointURL = endpoint.toURL()
     private val callTimeoutTime = connectTimeoutTime.plus(readTimeoutTime)
@@ -55,7 +57,6 @@ class GPT(
         }
         val dataPacket = GPTMessageContainer(listOf(GPTMessage(prompt)))
         return query(dataPacket)
-
     }
 
     private fun query(messageContainer: GPTMessageContainer): BaseGPTResponse {
@@ -84,9 +85,24 @@ class GPT(
                         GPTResponse::class.java
                     )
                     else ->
-                        throw Exception("${response.code} ${response.message}")
+                        throw HttpException(
+                            response.code,
+                            response.message,
+                            response.body?.string()
+                        )
                 }
             }
+    }
+
+    fun query(vararg messages:GPTMessage) =
+        query(listOf(*messages))
+
+    fun query(conversation: List<GPTMessage>): BaseGPTResponse {
+        if (apiToken == null) {
+            return NullGPTResponse()
+        }
+        val dataPacket = GPTMessageContainer(conversation)
+        return query(dataPacket)
     }
 
     companion object {
