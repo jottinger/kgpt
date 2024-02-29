@@ -12,6 +12,27 @@
     <description>A Kotlin interface to OpenAI-compatible LLM implementations</description>
     <url>https://github.com/jottinger/kgpt</url>
 
+    <licenses>
+        <license>
+            <name>Apache Source License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+
+    <scm>
+        <connection>scm:git:git://github.com/jottinger/kgpt.git</connection>
+        <developerConnection>scm:git:ssh://github.com:jottinger/kgpt.git</developerConnection>
+        <url>https://github.com/jottinger/kgpt/tree/master</url>
+    </scm>
+
+    <developers>
+        <developer>
+            <name>Joseph B. Ottinger</name>
+            <email>joeo@enigmastation.com</email>
+            <url>https://enigmastation.com/</url>
+        </developer>
+    </developers>
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <kotlin.version>1.9.22</kotlin.version>
@@ -171,7 +192,17 @@
                     </execution>
                 </executions>
             </plugin>
-
+            <plugin>
+                <groupId>org.sonatype.plugins</groupId>
+                <artifactId>nexus-staging-maven-plugin</artifactId>
+                <version>1.6.7</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <serverId>ossrh</serverId>
+                    <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
+                    <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                </configuration>
+            </plugin>
             <!-- Maven GPG Plugin for signing artifacts -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -183,6 +214,32 @@
                         <phase>verify</phase>
                         <goals>
                             <goal>sign</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.3.0</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.6.3</version>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
                         </goals>
                     </execution>
                 </executions>
