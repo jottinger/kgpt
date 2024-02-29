@@ -43,3 +43,10 @@ measurements only.
 
 1. If no API Key is supplied, the `GPT` instance will return a `NullGPTResponse` instance, which has no data and no state.
 2. If the key is invalid, or any other HTTP Exception occurs, the `query()` call will throw a `com.enigmastation.kgpt.HttpException`.
+
+## Testing
+
+To test this codebase, you should get an API Key from whichever LLM you choose 
+(OpenAI is the default), and plug it into a file called `.env`. There's an `.env.default`
+in the repository, but it has a blank `apiKey` value and will not successfully 
+test the API; it's only there as an example.
