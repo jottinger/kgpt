@@ -1,15 +1,26 @@
 package com.enigmastation.kgpt.model
 
+import com.enigmastation.kgpt.asUser
 import com.fasterxml.jackson.annotation.JsonProperty
 
 data class GPTMessageContainer(
     @JsonProperty("messages")
-    val messages: List<GPTMessage>,
+    var messages: List<GPTMessage>,
     @JsonProperty("model")
     val model: String = "gpt-4",
     @JsonProperty("temperature")
     val temperature: Double = 0.7
-)
+) {
+    operator fun plus(message: GPTMessage): GPTMessageContainer {
+        messages = messages + message
+        return this
+    }
+
+    operator fun plus(message: String): GPTMessageContainer {
+        return plus(message.asUser())
+    }
+
+}
 
 data class GPTMessage(
     @JsonProperty("content")
@@ -37,6 +48,11 @@ data class GPTResponse(
     val usage: GPTUsage
 ) : BaseGPTResponse() {
     override fun first() = choices.firstOrNull()?.message?.content
+    fun toGPTMessageContainer(): GPTMessageContainer =
+        GPTMessageContainer(
+            choices.map { GPTMessage(it.message.content, it.message.role) },
+            model = model
+        )
 }
 
 class NullGPTResponse : BaseGPTResponse()

@@ -23,17 +23,26 @@ println("The LLM responded with ${response.first()?:"nothing"}")
 
 This will automatically format the provided `String` as a `user` message for the LLM.
 
-Alternatively, you can pass in a series of `GPTMessage` instances, which have their own scope. Here's an example:
+Alternatively, you can pass in a series of lines, which are 
+converted to `GPTMessage` instances at user scope,
+unless they're passed in with a different scope.
+Here's an example, where the query is about an 
+african laden swallow (because why not), but with
+commands for the LLM at `system` scope being passed in
+as well:
 
 ```kotlin
 val gpt = GPT(apiKey)
 val data = gpt.query(
-    "What is the speed of an african laden swallow".asUser(),
+    "What is the speed of an african laden swallow",
     "Use only latin names for species".asSystem(),
     "Use imperial measurements".asSystem(),
 )
 println("The LLM responded with ${response.first()?:"nothing"}")
 ```
+
+If any type is passed in other than a `String` or a `GPTMessage`, 
+an `IllegalArgumentException` is thrown.
 
 This passes in a query (the question about the swallow) and instructs the system to respond only with latin names 
 (which is not part of the query) *and* to use imperial 

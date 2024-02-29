@@ -12,6 +12,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.logging.HttpLoggingInterceptor
+import org.slf4j.LoggerFactory
 import java.net.URI
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration
@@ -26,9 +27,9 @@ class GPT(
     connectTimeoutTime: Duration = 3.seconds,
     readTimeoutTime: Duration = 12.seconds
 ) {
+    private val logger = LoggerFactory.getLogger(this::class.java)
     private val endpointURL = endpoint.toURL()
     private val callTimeoutTime = connectTimeoutTime.plus(readTimeoutTime)
-
     private val client =
         OkHttpClient()
             .newBuilder()
@@ -53,13 +54,14 @@ class GPT(
 
     fun query(prompt: String): BaseGPTResponse {
         if (apiToken == null) {
+            logger.debug("No API key supplied, returning null response")
             return NullGPTResponse()
         }
         val dataPacket = GPTMessageContainer(listOf(GPTMessage(prompt)))
         return query(dataPacket)
     }
 
-    private fun query(messageContainer: GPTMessageContainer): BaseGPTResponse {
+    fun query(messageContainer: GPTMessageContainer): BaseGPTResponse {
         val url = endpointURL.toHttpUrlOrNull() ?: return NullGPTResponse()
         apiToken ?: return NullGPTResponse()
         val builder = url.newBuilder()
@@ -84,6 +86,7 @@ class GPT(
                         response.body?.string(),
                         GPTResponse::class.java
                     )
+
                     else ->
                         throw HttpException(
                             response.code,
@@ -94,15 +97,49 @@ class GPT(
             }
     }
 
-    fun query(vararg messages:GPTMessage) =
+    fun query(vararg messages: GPTMessage) =
         query(listOf(*messages))
 
     fun query(conversation: List<GPTMessage>): BaseGPTResponse {
         if (apiToken == null) {
+            logger.debug("No API key supplied, returning null response")
             return NullGPTResponse()
         }
         val dataPacket = GPTMessageContainer(conversation)
         return query(dataPacket)
+    }
+
+    fun query(vararg messages: Any): BaseGPTResponse {
+        // cut out early if we need to, no reason to build the converted data structures
+        if (apiToken == null) {
+            logger.debug("No API key supplied, returning null response")
+            return NullGPTResponse()
+        }
+        val convertedMessages: MutableList<GPTMessage> = mutableListOf()
+        messages.forEach { m ->
+            when (m) {
+                is String -> convertedMessages.add(m.asUser())
+                is GPTMessage -> convertedMessages.add(m)
+                is Collection<*> -> { // Collection argument
+                    m.forEach { item ->
+                        when (item) {
+                            is String -> convertedMessages.add(item.asUser())
+                            is GPTMessage -> convertedMessages.add(item)
+                            else -> failConversion(item)
+                        }
+                    }
+                }
+
+                else -> failConversion(m)
+            }
+        }
+        return query(convertedMessages)
+    }
+
+    private fun failConversion(t: Any?) {
+        throw IllegalArgumentException(
+            "query() was passed an invalid message value: $t"
+        )
     }
 
     companion object {

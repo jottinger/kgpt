@@ -1,6 +1,9 @@
 package com.enigmastation.kgpt
 
 import com.enigmastation.kgpt.model.GPTMessage
+import com.enigmastation.kgpt.model.GPTMessageContainer
+import com.enigmastation.kgpt.model.GPTResponse
+import com.enigmastation.kgpt.model.NullGPTResponse
 import io.github.cdimascio.dotenv.dotenv
 import org.testng.Assert.assertTrue
 import org.testng.annotations.DataProvider
@@ -41,10 +44,22 @@ class GPTTest {
     }
 
     @Test
+    fun issueComplexQueryMixedTypes() {
+        val gpt = GPT(apiKey)
+        val data = gpt.query(
+            "What is the speed of an african laden swallow",
+            "Use only latin names for species".asSystem(),
+            "Use imperial measurements".asSystem(),
+        )
+        println("LLM responded with '${data.first() ?: "nothing"}'")
+        assertTrue(data.first()?.contains("Hirundo") ?: false)
+    }
+
+    @Test
     fun issueComplexQueryVararg() {
         val gpt = GPT(apiKey)
         val data = gpt.query(
-            "What is the speed of an african laden swallow".asUser(),
+            "What is the speed of an african laden swallow",
             "Use only latin names for species".asSystem(),
             "Use imperial measurements".asSystem(),
         )
@@ -53,13 +68,47 @@ class GPTTest {
     }
 
     @Test
+    fun queryUsingActualContainer() {
+        val gpt = GPT(apiKey)
+        val data = gpt.query(GPTMessageContainer(listOf("how are YOU doing".asUser())))
+        println(data.first())
+    }
+
+    @Test
+    fun testWithNullKey() {
+        val gpt=GPT()
+        val data=gpt.query("whoop de doodle!")
+        assertTrue(data is NullGPTResponse)
+    }
+
+    @Test
+    fun includeConversation() {
+        val gpt = GPT(apiKey)
+        var data = gpt.query("What is the speed of a laden african barn swallow") as GPTResponse
+        println(data.choices.map { it.message.content + "\n" })
+        data = gpt.query(
+            "What is the speed of an african laden swallow",
+            data.choices.map { GPTMessage(it.message.content, it.message.role) },
+            "Use only latin names for species".asSystem()
+        ) as GPTResponse
+        println(data.choices.map { it.message.content + "\n" })
+        data = gpt.query(
+            "What is the speed of an african laden swallow",
+            data.choices.map { GPTMessage(it.message.content, it.message.role) },
+            "Use only latin names for species".asSystem(),
+            "Use only imperial measurements.".asSystem()
+        ) as GPTResponse
+        println(data.choices.map { it.message.content + "\n" })
+    }
+
+    @Test
     fun issueComplexQueryList() {
         val gpt = GPT(apiKey)
         val data = gpt.query(
             listOf(
-            "What is the speed of an african laden swallow".asUser(),
-            "Use only latin names for species".asSystem(),
-            "Use imperial measurements".asSystem(),
+                "What is the speed of an african laden swallow".asUser(),
+                "Use only latin names for species".asSystem(),
+                "Use imperial measurements".asSystem(),
             )
         )
         println(data.first())
