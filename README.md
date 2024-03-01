@@ -59,3 +59,14 @@ To test this codebase, you should get an API Key from whichever LLM you choose
 (OpenAI is the default), and plug it into a file called `.env`. There's an `.env.default`
 in the repository, but it has a blank `apiKey` value and will not successfully 
 test the API; it's only there as an example.
+
+## Deployment
+
+> This section is for the maintainer!
+
+Deployment is a pain. This is what worked:
+
+```bash
+export MAVEN_OPTS="--add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.text=ALL-UNNAMED --add-opens=java.desktop/java.awt.font=ALL-UNNAMED" 
+mvn -DskipTests=true clean dokka:javadocJar deploy
+```
